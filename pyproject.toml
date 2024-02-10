@@ -1,0 +1,14 @@
+[tool.poetry]
+name = "test-repo"
+version = "v0.0.0"
+description = ""
+authors = ["dodslaser <2969909+dodslaser@users.noreply.github.com>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.11"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"

@@ -1,0 +1,32 @@
+# Publish a release
+---
+  name: Publish Release
+
+  on:
+    workflow_call:
+      inputs:
+        body:
+          description: 'The body of the release'
+          type: string
+          required: true
+
+  jobs:
+    publish-release:
+      runs-on: ubuntu-latest
+      permissions:
+        pull-requests: write
+        contents: write
+      steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+      - uses: abatilo/actions-poetry@v2
+      - name: poetry-version
+        id: poetry-version
+        run: echo "version=$(poetry version -s)" >> "$GITHUB_OUTPUT"
+      - uses: ncipollo/release-action@v1
+        with:
+          draft: false
+          tag: ${{ steps.poetry-version.outputs.version }}
+          body: ${{ inputs.body }}

@@ -1,0 +1,28 @@
+# Run jobs on pull push events
+---
+  name: Push Workflow
+  permissions: read-all
+
+  on:
+    push:
+      branches:
+      - dev
+      - main
+
+  jobs:
+    release-pr:
+      if: github.ref_name == 'dev'
+      name: Create/Update release PR
+      uses: ./.github/workflows/def_release-pr.yml
+      permissions:
+        pull-requests: write
+        contents: write
+    rebase-dev-to-main:
+      if: github.ref_name == 'main'
+      name: Rebase dev to main
+      uses: ./.github/workflows/def_rebase.yml
+      permissions:
+        contents: write
+      with:
+        branch: dev
+        base: origin/main

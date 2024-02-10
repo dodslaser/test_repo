@@ -1,0 +1,30 @@
+# Rebase a branch onto another branch
+---
+  name: Git Rebase
+
+  on:
+    workflow_call:
+      inputs:
+        branch:
+          description: Branch to rebase
+          required: true
+          type: string
+        base:
+          description: Base branch to rebase onto
+          required: true
+          type: string
+
+  jobs:
+    rebase:
+      runs-on: ubuntu-latest
+      permissions:
+        contents: write
+      steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.branch }}
+          fetch-depth: 0
+      - name: git-rebase
+        run: |
+          git rebase '${{ inputs.base }}'
+          git push --force-with-lease

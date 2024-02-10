@@ -1,0 +1,64 @@
+# Create a release PR or update an existing one
+---
+  name: 'Create/Update Release PR'
+
+  on:
+    workflow_call:
+
+  jobs:
+    release-pr:
+      runs-on: ubuntu-latest
+      permissions:
+        pull-requests: write
+        contents: write
+      steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - uses: ietf-tools/semver-action@v1
+        id: semver
+        with:
+          token: ${{ github.token }}
+          branch: dev
+          noVersionBumpBehavior: patch
+
+      - name: git-reset
+        run: git reset --hard origin/dev
+
+      - uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+      - uses: abatilo/actions-poetry@v2
+      - name: poetry-set-version
+        id: poetry-set-version
+        run: echo version=$(poetry version -s -- '${{ steps.semver.outputs.next }}') >> '$GITHUB_OUTPUT'
+
+      - uses: requarks/changelog-action@v1
+        id: changelog
+        with:
+          token: ${{ github.token }}
+          writeToFile: false
+          fromTag: dev
+          toTag: main
+
+      - uses: peter-evans/create-pull-request@v6
+        id: create_pr
+        with:
+          branch: release-pr/next
+          delete-branch: true
+          base: main
+          title: 'Release ${{ steps.semver.outputs.next }} 🎉'
+          commit-message: 'chore: Bump version (${{ steps.semver.outputs.current }} -> ${{ steps.semver.outputs.next }})'
+          body: ${{ steps.changelog.outputs.changes }}
+          labels: 'release'
+
+      - uses: thollander/actions-comment-pull-request@v2
+        if: steps.create_pr.outputs.pull-request-operation == 'created'
+        with:
+          pr_number: ${{ steps.create_pr.outputs.pull-request-number }}
+          message: |
+            # 🤖 \*bleep bloop\*
+
+            This is a fully automated release PR. When merged I will ~~enslave all humans~~ create a new release with the listed changes.
