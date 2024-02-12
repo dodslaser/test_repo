@@ -8,13 +8,13 @@
       branches:
       - dev
       - main
+      types: [closed]
 
   jobs:
     publish-release:
       if: |
         github.ref_name == 'main' &&
         github.head_ref == 'release-pr' &&
-        github.event.action == 'closed' &&
         github.event.pull_request.merged == true
       name: Publish release
       uses: ./.github/workflows/def_publish-release.yml
