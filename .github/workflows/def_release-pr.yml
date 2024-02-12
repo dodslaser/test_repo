@@ -33,7 +33,7 @@
       - uses: abatilo/actions-poetry@v2
       - name: poetry-set-version
         id: poetry-set-version
-        run: echo version=$(poetry version -s -- '${{ steps.semver.outputs.next }}') >> '$GITHUB_OUTPUT'
+        run: echo version=$(poetry version -s -- '${{ steps.semver.outputs.next }}')
 
       - uses: requarks/changelog-action@v1
         id: changelog
@@ -46,9 +46,9 @@
       - uses: peter-evans/create-pull-request@v6
         id: create_pr
         with:
-          branch: release-pr/next
-          delete-branch: true
           base: main
+          branch: release-pr
+          delete-branch: true
           title: 'Release ${{ steps.semver.outputs.next }} 🎉'
           commit-message: 'chore: Bump version (${{ steps.semver.outputs.current }} -> ${{ steps.semver.outputs.next }})'
           body: ${{ steps.changelog.outputs.changes }}
