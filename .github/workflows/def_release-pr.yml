@@ -45,10 +45,15 @@
 
       - name: poetry-version
         if: steps.cache.outputs.cache-hit != 'true'
+        env:
+          message: "chore: Bump version (${{ steps.semver-version.outputs.current }} -> ${{ steps.semver-version.outputs.next }})"
+          bump-trailer: 'bump:${{ steps.semver-version.outputs.current }}'
         run: |
           pipx install poetry
           poetry version -- ${{ steps.semver-version.outputs.next }}
-          git commit -am "chore: Bump version (${{ steps.semver-version.outputs.current }} -> ${{ steps.semver-version.outputs.next }})"
+          _bump=$(git log --grep '${{ env.bump-trailer }}' --oneline | cut -d' ' -f1)
+          git commit -am '${{ env.message }}' --trailer='${{ env.bump-trailer}}' ${_bump:+--fixup=$_bump}
+          git -c sequence.editor=: rebase -i --autosquash
 
       - uses: actions/cache/save@v4
         if: steps.cache.outputs.cache-hit != 'true'
@@ -68,11 +73,11 @@
             This is a fully automated release PR. When merged I will ~~enslave all humankind~~ create a new release with the listed changes.
         run: |
           {
-            gh pr create --title '${{ env.title }}' --body '${{ env.body }}' --label '${{ env.labels }}' --base main --head dev
+            gh pr create --title '${{ env.title }}' --body '${{ env.body }}' --label '${{ env.label }}' --base main --head dev
           } && {
             gh pr comment dev --body '${{ env.comment }}'
           } || {
-            gh pr edit dev --title '${{ env.title }}' --body '${{ env.body }}' --add-label '${{ env.labels }}'
+            gh pr edit dev --title '${{ env.title }}' --body '${{ env.body }}' --add-label '${{ env.label }}'
           }
 
 
