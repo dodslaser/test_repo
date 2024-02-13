@@ -24,4 +24,4 @@
         steps:
           - uses: actions/checkout@v4
           - name: move-pr
-            run: gh pr edit '${{ inputs.pull_request_number }}' --base dev --coment '${{ env.comment }}'
+            run: gh pr edit '${{ inputs.pull_request_number }}' --base 'dev' --comment '${{ env.comment }}'
