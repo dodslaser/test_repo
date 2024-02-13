@@ -35,7 +35,7 @@ runs:
       if [[ '${{ steps.cache-pyproject-toml.outputs.cache-hit }}' == 'true' ]]; then
         _output="version='${{ inputs.version }}'"
       elif [[ '${{ steps.cache_version.outputs.cache-hit }}' == 'true' ]]; then
-        _output="version=$(cat '${{ steps.cache_version.outputs.cache-primary-key }}')"
+        _output="$(cat '${{ steps.cache_version.outputs.cache-primary-key }}')"
       else:
         pipx install poetry
         _output="version=$(poetry version -s -- '${{ inputs.version }}')"
