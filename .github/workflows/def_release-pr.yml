@@ -36,16 +36,30 @@
       - name: git-reset
         run: git reset --hard origin/dev
 
-      - name: poetry-version
-        uses: ./.github/actions/poetry-version
+      - uses: actions/cache/restore@v4
+        id: cache
         with:
-          version: ${{ needs.semver-version.outputs.next }}
+          key: ${{ hashFiles('pyproject.toml') }}_${{ needs.semver-version.outputs.next }}
+          path: pyproject.toml
+          lookup-only: true
+
+      - name: poetry-version
+        if: steps.cache.outputs.cache-hit != 'true'
+        run: |
+          pipx install poetry
+          poetry version -- ${{ needs.semver-version.outputs.next }}
+
+      - uses: actions/cache/save@v4
+        if: steps.cache.outputs.cache-hit != 'true'
+        with:
+          key: ${{ hashFiles('pyproject.toml') }}_${{ needs.semver-version.outputs.next }}
+          path: pyproject.toml
 
       - uses: peter-evans/create-pull-request@v6
         id: create_pr
         with:
           base: main
-          branch: release-pr
+          branch: dev
           title: 'Release ${{ needs.semver-version.outputs.next }} 🎉'
           body: ${{ needs.changelog.outputs.changes }}
           commit-message: 'chore: Bump version (${{ needs.semver-version.outputs.current }} -> ${{ needs.semver-version.outputs.next }})'
