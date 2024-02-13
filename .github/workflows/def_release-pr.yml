@@ -6,23 +6,8 @@
     workflow_call:
 
   jobs:
-    semver-version:
-      uses: ./.github/workflows/def_semver-version.yml
-      with:
-        from: main
-        to: dev
-
-    changelog:
-      uses: ./.github/workflows/def_generate-changelog.yml
-      with:
-        from: dev
-        to: main
-
     release-pr:
       runs-on: ubuntu-latest
-      needs:
-      - semver-version
-      - changelog
       permissions:
         pull-requests: write
         contents: write
@@ -33,13 +18,28 @@
           ref: main
           fetch-depth: 0
 
+      - uses: requarks/changelog-action@v1
+        id: changelog
+        with:
+          token: ${{ github.token }}
+          writeToFile: false
+          fromTag: dev
+          toTag: main
+
+      - uses: ietf-tools/semver-action@v1
+        id: semver-version
+        with:
+          token: ${{ github.token }}
+          branch: dev
+          noVersionBumpBehavior: patch
+
       - name: git-reset
         run: git reset --hard origin/dev
 
       - uses: actions/cache/restore@v4
         id: cache
         with:
-          key: ${{ hashFiles('pyproject.toml') }}_${{ needs.semver-version.outputs.next }}
+          key: ${{ hashFiles('pyproject.toml') }}_${{ steps.semver-version.outputs.next }}
           path: pyproject.toml
           lookup-only: true
 
@@ -47,29 +47,32 @@
         if: steps.cache.outputs.cache-hit != 'true'
         run: |
           pipx install poetry
-          poetry version -- ${{ needs.semver-version.outputs.next }}
+          poetry version -- ${{ steps.semver-version.outputs.next }}
+          git commit -am "chore: Bump version (${{ steps.semver-version.outputs.current }} -> ${{ steps.semver-version.outputs.next }})"
 
       - uses: actions/cache/save@v4
         if: steps.cache.outputs.cache-hit != 'true'
         with:
-          key: ${{ hashFiles('pyproject.toml') }}_${{ needs.semver-version.outputs.next }}
+          key: ${{ hashFiles('pyproject.toml') }}_${{ steps.semver-version.outputs.next }}
           path: pyproject.toml
 
-      - uses: peter-evans/create-pull-request@v6
-        id: create_pr
-        with:
-          base: main
-          branch: dev
-          title: 'Release ${{ needs.semver-version.outputs.next }} 🎉'
-          body: ${{ needs.changelog.outputs.changes }}
-          commit-message: 'chore: Bump version (${{ needs.semver-version.outputs.current }} -> ${{ needs.semver-version.outputs.next }})'
-          labels: 'release'
-
-      - uses: thollander/actions-comment-pull-request@v2
-        if: steps.create_pr.outputs.pull-request-operation == 'created'
-        with:
-          pr_number: ${{ steps.create_pr.outputs.pull-request-number }}
-          message: |
+      - name: create-or-update-pr
+        env:
+          GH_TOKEN: ${{ github.token }}
+          title: 'Release ${{ steps.semver-version.outputs.next }} 🎉'
+          body: ${{ steps.changelog.outputs.changes }}
+          label: 'release'
+          comment: |
             # 🤖 \*bleep bloop\*
 
-            This is a fully automated release PR. When merged I will ~~enslave all humans~~ create a new release with the listed changes.
+            This is a fully automated release PR. When merged I will ~~enslave all humankind~~ create a new release with the listed changes.
+        run: |
+          {
+            gh pr create --title '${{ env.title }}' --body '${{ env.body }}' --label '${{ env.labels }}' --base main --head dev
+          } && {
+            gh pr comment dev --body '${{ env.comment }}'
+          } || {
+            gh pr edit dev --title '${{ env.title }}' --body '${{ env.body }}' --add-label '${{ env.labels }}'
+          }
+
+
