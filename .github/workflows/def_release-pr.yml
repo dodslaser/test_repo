@@ -52,8 +52,9 @@
           pipx install poetry
           poetry version -- ${{ steps.semver-version.outputs.next }}
           _bump=$(git log --grep '${{ env.bump-trailer }}' --oneline | cut -d' ' -f1)
+          git config --global user.name 'github-actions[bot]'
+          git config --global user.email ''
           git commit -am '${{ env.message }}' --trailer='${{ env.bump-trailer}}' ${_bump:+--fixup=$_bump}
-          echo TEST
           git -c sequence.editor=: rebase -i --autosquash
 
       - uses: actions/cache/save@v4
