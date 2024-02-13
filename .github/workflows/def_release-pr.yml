@@ -6,52 +6,54 @@
     workflow_call:
 
   jobs:
+    semver-version:
+      uses: ./.github/workflows/def_semver-version.yml
+      with:
+        from: main
+        to: dev
+
+    poetry-version:
+      uses: ./.github/workflows/def_poetry-version.yml
+      needs: semver-version
+      with:
+        version: ${{ needs.semver-version.outputs.next }}
+
+    changelog:
+      uses: ./.github/workflows/def_generate-changelog.yml
+      with:
+        from: dev
+        to: main
+
     release-pr:
       runs-on: ubuntu-latest
+      needs:
+      - semver-version
+      - poetry-version
+      - changelog
       permissions:
         pull-requests: write
         contents: write
+
       steps:
       - uses: actions/checkout@v4
         with:
           ref: main
           fetch-depth: 0
 
-      - uses: ietf-tools/semver-action@v1
-        id: semver
-        with:
-          token: ${{ github.token }}
-          branch: dev
-          noVersionBumpBehavior: patch
-
       - name: git-reset
         run: git reset --hard origin/dev
 
-      - uses: actions/setup-python@v4
-        with:
-          python-version: '3.11'
-      - uses: abatilo/actions-poetry@v2
-      - name: poetry-set-version
-        id: poetry-set-version
-        run: echo version=$(poetry version -s -- '${{ steps.semver.outputs.next }}')
-
-      - uses: requarks/changelog-action@v1
-        id: changelog
-        with:
-          token: ${{ github.token }}
-          writeToFile: false
-          fromTag: dev
-          toTag: main
+      - name: update-pyproject-toml
+        run: echo '${{ needs.poetry-version.outputs.pyproject-toml }}' > "pyproject.toml"
 
       - uses: peter-evans/create-pull-request@v6
         id: create_pr
         with:
           base: main
           branch: release-pr
-          delete-branch: true
-          title: 'Release ${{ steps.semver.outputs.next }} 🎉'
-          commit-message: 'chore: Bump version (${{ steps.semver.outputs.current }} -> ${{ steps.semver.outputs.next }})'
-          body: ${{ steps.changelog.outputs.changes }}
+          title: 'Release ${{ needs.semver-version.outputs.next }} 🎉'
+          body: ${{ needs.changelog.outputs.changes }}
+          commit-message: 'chore: Bump version (${{ needs.semver-version.outputs.current }} -> ${{ needs.semver-version.outputs.next }})'
           labels: 'release'
 
       - uses: thollander/actions-comment-pull-request@v2
