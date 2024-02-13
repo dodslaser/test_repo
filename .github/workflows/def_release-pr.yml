@@ -12,12 +12,6 @@
         from: main
         to: dev
 
-    poetry-version:
-      uses: ./.github/workflows/def_poetry-version.yml
-      needs: semver-version
-      with:
-        version: ${{ needs.semver-version.outputs.next }}
-
     changelog:
       uses: ./.github/workflows/def_generate-changelog.yml
       with:
@@ -28,7 +22,6 @@
       runs-on: ubuntu-latest
       needs:
       - semver-version
-      - poetry-version
       - changelog
       permissions:
         pull-requests: write
@@ -43,8 +36,10 @@
       - name: git-reset
         run: git reset --hard origin/dev
 
-      - name: update-pyproject-toml
-        run: echo '${{ needs.poetry-version.outputs.pyproject-toml }}' > "pyproject.toml"
+      - name: poetry-version
+        uses: ./.github/actions/poetry-version
+        with:
+          version: ${{ needs.semver-version.outputs.next }}
 
       - uses: peter-evans/create-pull-request@v6
         id: create_pr

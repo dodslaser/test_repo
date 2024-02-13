@@ -11,19 +11,17 @@
           required: true
 
   jobs:
-    poetry-version:
-      uses: ./.github/workflows/def_poetry-version.yml
-
     publish-release:
       runs-on: ubuntu-latest
-      needs: poetry-version
       permissions:
         pull-requests: write
         contents: write
       steps:
       - uses: actions/checkout@v4
+      - uses: ./.github/actions/poetry-version
+        id: poetry-version
       - uses: ncipollo/release-action@v1
         with:
           draft: false
-          tag: '${{ needs.poetry-version.outputs.version }}'
+          tag: '${{ steps.poetry-version.outputs.version }}'
           body: '${{ inputs.body }}'
