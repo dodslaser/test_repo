@@ -1,6 +1,6 @@
 # Close non-automated PRs
 ---
-    name: 'Close non-release PR'
+    name: 'Move non-release PR'
 
     on:
       workflow_call:
@@ -11,7 +11,7 @@
             required: true
 
     jobs:
-      close-non-release-pr:
+      move-non-release-pr:
         runs-on: ubuntu-latest
         permissions:
           pull-requests: write
@@ -20,8 +20,8 @@
           comment: |
             # 🤖 \*bleep bloop\*
 
-            Only automated release PRs are allowed on the main branch. Please open a PR against the `dev` branch instead.
+            Only automated release PRs are allowed on the main branch. This PR will be moved to the dev branch.
         steps:
           - uses: actions/checkout@v4
-          - name: close-pr
-            run: gh pr close '${{ inputs.pull_request_number }}' -c '${{ env.comment }}'
+          - name: move-pr
+            run: gh pr edit '${{ inputs.pull_request_number }}' --base dev --coment '${{ env.comment }}'
