@@ -4,17 +4,30 @@
   permissions: read-all
 
   on:
-    pull_request:
+    pull_request_target:
       branches:
       - dev
       - main
-      types: [closed]
+      - release-pr
+      types: [opened, closed]
 
   jobs:
+    close-non-release-pr:
+      if: |
+        github.ref_name == 'main' &&
+        github.event.action == 'opened'
+      name: Close non-release PRs
+      uses: ./.github/workflows/def_close-non-release-pr.yml
+      with:
+        pull_request_number: ${{ github.event.pull_request.number }}
+      permissions:
+        pull-requests: write
+
     publish-release:
       if: |
         github.ref_name == 'main' &&
         github.head_ref == 'release-pr' &&
+        github.event.action == 'closed' &&
         github.event.pull_request.merged == true
       name: Publish release
       uses: ./.github/workflows/def_publish-release.yml
