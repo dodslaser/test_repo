@@ -1,14 +1,1 @@
-[tool.poetry]
-name = "test-repo"
-version = "v0.2.0"
-description = "bleep bloop"
-authors = ["dodslaser <2969909+dodslaser@users.noreply.github.com>"]
-readme = "README.md"
-
-[tool.poetry.dependencies]
-python = "^3.11"
-
-
-[build-system]
-requires = ["poetry-core"]
-build-backend = "poetry.core.masonry.api"
+[tool.poetry] name = "test-repo" version = "v0.2.1" description = "bleep bloop" authors = ["dodslaser <2969909+dodslaser@users.noreply.github.com>"] readme = "README.md" [tool.poetry.dependencies] python = "^3.11" [build-system] requires = ["poetry-core"] build-backend = "poetry.core.masonry.api"

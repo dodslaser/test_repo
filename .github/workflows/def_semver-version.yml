@@ -1,0 +1,40 @@
+# Rebase a branch onto another branch
+---
+  name: Semver Version
+
+  on:
+    workflow_call:
+      inputs:
+        from:
+          description: Ref to use as the base
+          required: true
+          type: string
+        to:
+          description: Ref to use as the head
+          required: true
+          type: string
+      outputs:
+        next:
+          description: The next semver version
+          value: ${{ jobs.semver-version.outputs.next }}
+        current:
+          description: The current semver version
+          value: ${{ jobs.semver-version.outputs.current }}
+
+  jobs:
+    semver-version:
+      runs-on: ubuntu-latest
+      outputs:
+        next: ${{ steps.semver.outputs.next }}
+        current: ${{ steps.semver.outputs.current }}
+      steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.from }}
+
+      - uses: ietf-tools/semver-action@v1
+        id: semver
+        with:
+          token: ${{ github.token }}
+          branch: ${{ inputs.to }}
+          noVersionBumpBehavior: patch

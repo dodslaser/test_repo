@@ -1,0 +1,26 @@
+# Close non-automated PRs
+---
+    name: 'Close non-release PR'
+
+    on:
+      workflow_call:
+        inputs:
+          pull_request_number:
+            description: 'The PR number'
+            type: number
+            required: true
+
+    jobs:
+      close-non-release-pr:
+        runs-on: ubuntu-latest
+        permissions:
+          pull-requests: write
+        env:
+          comment: |
+            # 🤖 \*bleep bloop\*
+
+            Only automated release PRs are allowed on the main branch. Please open a PR against the `dev` branch instead.
+        steps:
+          - uses: actions/checkout@v4
+          - name: close-pr
+            run: gh pr close '${{ inputs.pull_request_number }}' -c '${{ env.comment }}'
