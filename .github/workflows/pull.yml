@@ -5,9 +5,7 @@
 
   on:
     pull_request_target:
-      branches:
-      - dev
-      - main
+      branches: '*'
       types: [opened, closed]
 
   jobs:
