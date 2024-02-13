@@ -18,8 +18,11 @@
         contents: write
       steps:
       - uses: actions/checkout@v4
-      - uses: ./.github/actions/poetry-version
+      - name: poetry-version
         id: poetry-version
+        run: |
+          pipx install poetry
+          echo "version=$(poetry version -s)" >> $GITHUB_OUTPUT
       - uses: ncipollo/release-action@v1
         with:
           draft: false
