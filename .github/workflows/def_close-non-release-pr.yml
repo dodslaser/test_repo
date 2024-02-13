@@ -16,6 +16,7 @@
         permissions:
           pull-requests: write
         env:
+          GH_TOKEN: ${{ github.token }}
           comment: |
             # 🤖 \*bleep bloop\*
 
