@@ -6,15 +6,16 @@
   on:
     pull_request_target:
       branches: '*'
-      types: [opened, closed]
+      types: [opened, closed, reopened]
 
   jobs:
-    close-non-release-pr:
+    move-non-release-pr:
       if: |
         github.ref_name == 'main' &&
-        github.event.action == 'opened'
+        github.event.action == 'opened' ||
+        github.event.action == 'reopened'
       name: Close non-release PRs
-      uses: ./.github/workflows/def_close-non-release-pr.yml
+      uses: ./.github/workflows/def_move-non-release-pr.yml
       with:
         pull_request_number: ${{ github.event.pull_request.number }}
       permissions:
