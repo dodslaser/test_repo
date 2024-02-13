@@ -25,5 +25,5 @@
       - uses: ncipollo/release-action@v1
         with:
           draft: false
-          tag: ${{ needs.poetry-version.outputs.version }}
-          body: ${{ inputs.body }}
+          tag: '${{ needs.poetry-version.outputs.version }}'
+          body: '${{ inputs.body }}'
