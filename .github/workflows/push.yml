@@ -17,12 +17,3 @@
       permissions:
         pull-requests: write
         contents: write
-    rebase-dev-to-main:
-      if: github.ref_name == 'main'
-      name: Rebase dev to main
-      uses: ./.github/workflows/def_rebase.yml
-      permissions:
-        contents: write
-      with:
-        branch: dev
-        base: origin/main
