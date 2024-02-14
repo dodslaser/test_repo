@@ -14,7 +14,7 @@
     rebase-dev-on-main:
       uses: ./.github/workflows/def_rebase.yml
       with:
-        base: main
+        base: origin/main
         head: dev
 
     publish-release:
@@ -23,6 +23,9 @@
       permissions:
         contents: write
       steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
       - name: poetry-version
         id: poetry-version
         run: |
