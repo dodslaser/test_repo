@@ -5,8 +5,8 @@
   on:
     workflow_call:
       inputs:
-        branch:
-          description: Branch to rebase
+        head:
+          description: HEAD to rebase
           required: true
           type: string
         base:
@@ -22,7 +22,7 @@
       steps:
       - uses: actions/checkout@v4
         with:
-          ref: ${{ inputs.branch }}
+          ref: ${{ inputs.head }}
           fetch-depth: 0
       - name: git-rebase
         run: |
