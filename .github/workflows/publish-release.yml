@@ -3,8 +3,6 @@
   on:
     pull_request_target:
       types: [closed]
-      branches:
-        - dev
 
   jobs:
     version:
@@ -29,7 +27,4 @@
       steps:
         - uses: actions/checkout@v4
         - name: Publish Release
-          run: |
-            {
-              gh release create v${{ needs.version.outputs.next }} --body ${{ github.event.pull_request.body }}
-            }
+          run: gh release create v${{ needs.version.outputs.next }} --body ${{ github.event.pull_request.body }}
