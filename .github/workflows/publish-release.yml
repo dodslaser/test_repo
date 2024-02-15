@@ -1,0 +1,32 @@
+# Create or update a release PR for merging dev -> main
+---
+  on:
+    pull_request_target:
+      types: [closed]
+
+  jobs:
+    version:
+      runs-on: ubuntu-latest
+      outputs:
+        current: ${{ steps.semver.outputs.current }}
+        next: ${{ steps.semver.outputs.next }}
+      steps:
+      - uses: actions/checkout@v4
+      - uses: ietf-tools/semver-action@v1
+        id: semver
+        with:
+          token: ${{ github.token }}
+          branch: ${{ github.event.pull_request.base.ref }}
+          noVersionBumpBehavior: 'patch'
+
+    publish-release:
+      runs-on: ubuntu-latest
+      needs: [version]
+      permissions:
+        pull-requests: write
+      steps:
+        - uses: actions/checkout@v4
+        - name: Publish Release
+          env:
+            GH_TOKEN: ${{ github.token }}
+          run: gh release create '${{ needs.version.outputs.next }}' --notes '${{ github.event.pull_request.body }}'
