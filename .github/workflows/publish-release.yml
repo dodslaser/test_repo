@@ -7,6 +7,7 @@
   jobs:
     version:
       runs-on: ubuntu-latest
+      if: github.event.pull_request.merged == true
       outputs:
         current: ${{ steps.semver.outputs.current }}
         next: ${{ steps.semver.outputs.next }}
@@ -21,6 +22,7 @@
 
     publish-release:
       runs-on: ubuntu-latest
+      if: github.event.pull_request.merged == true
       needs: [version]
       permissions:
         contents: write

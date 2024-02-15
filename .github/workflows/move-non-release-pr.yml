@@ -1,0 +1,26 @@
+# Create or update a release PR for merging dev -> main
+---
+    on:
+      pull_request_target:
+        types: [opened, reopened, edited]
+        branches:
+          - main
+
+    jobs:
+      version:
+        runs-on: ubuntu-latest
+        permissions:
+          pull-requests: write
+        steps:
+          - uses: actions/checkout@v4
+          - name: Move non-release PRs
+            env:
+              GH_TOKEN: ${{ github.token }}
+              comment: |
+                # 🤖 \*bleep bloop\*
+
+                Only automated release PRs are allowed to be opened against the main branch. This PR will be moved to the dev branch.
+
+            run: |
+              gh pr comment ${{ github.event.pull_request.number }} --body "$comment"
+              gh pr edit ${{ github.event.pull_request.number }} --base dev
