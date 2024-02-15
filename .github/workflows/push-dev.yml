@@ -1,0 +1,106 @@
+# Create or update a release PR for merging dev -> main
+---
+  name: Push to dev
+
+  on:
+    push:
+      branches: [dev]
+
+  jobs:
+    semver:
+      name: Calculate next version
+      uses: ./.github/workflows/def_semver.yml
+      with:
+        branch: dev
+
+    changelog:
+      name: Generate changelog
+      runs-on: ubuntu-latest
+      outputs:
+        changes: '${{ steps.changelog.outputs.changes }}'
+      steps:
+      - uses: actions/checkout@v4
+      - uses: requarks/changelog-action@v1
+        id: changelog
+        with:
+          token: ${{ github.token }}
+          fromTag: dev
+          toTag: main
+          writeToFile: false
+          excludeScopes: 'bump'
+
+    poetry:
+      name: Synchonize poetry
+      runs-on: ubuntu-latest
+      needs: [semver]
+      permissions:
+        contents: write
+      steps:
+        - uses: actions/checkout@v4
+        - uses: actions/cache/restore@v4
+          id: cache
+          with:
+            key: ${{ hashFiles('pyproject.toml') }}-${{ hashFiles('poetry.lock') }}-${{ needs.semver.outputs.next }}
+            path: |
+              pyproject.toml
+              poetry.lock
+        - name: install-poetry
+          if: steps.cache.outputs.cache-hit != 'true'
+          run: |
+            pipx install poetry
+        - uses: actions/setup-python@v5
+          if: steps.cache.outputs.cache-hit != 'true'
+          with:
+            python-version: 3.11
+            cache: 'poetry'
+        - name: check
+          if: steps.cache.outputs.cache-hit != 'true'
+          run: poetry check
+        - name: lock
+          if: steps.cache.outputs.cache-hit != 'true'
+          run: poetry lock
+        - name: version
+          id: poetry-version
+          if: steps.cache.outputs.cache-hit != 'true'
+          run: echo "msg=$(poetry version -- ${{ needs.semver.outputs.next }})" >> "$GITHUB_OUTPUT"
+        - name: git-commit
+          if: steps.cache.outputs.cache-hit != 'true'
+          run: |
+            git config --global user.email ""
+            git config --global user.name "github-actions[bot]"
+            git diff --exit-code || {
+              git commit -am "chore[bump]: ${{ steps.poetry-version.outputs.msg }}"
+              git push
+            }
+        - uses: actions/cache/save@v4
+          if: steps.cache.outputs.cache-hit != 'true'
+          with:
+            key: ${{ hashFiles('pyproject.toml') }}-${{ hashFiles('poetry.lock') }}-${{ needs.semver.outputs.next }}
+            path: |
+              pyproject.toml
+              poetry.lock
+
+    release-pr:
+      name: Create/update release PR
+      runs-on: ubuntu-latest
+      needs: [changelog, semver]
+      permissions:
+        pull-requests: write
+      steps:
+        - uses: actions/checkout@v4
+        - name: create-or-update
+          env:
+            GH_TOKEN: ${{ github.token }}
+            title: Release ${{ needs.semver.outputs.next }} 🚀
+            comment: |
+              # 🤖 \*bleep bloop\*
+
+              This is a fully automated release PR. When merged I will ~~enslave all humans~~ create a new release with the listed changes.
+          run: |
+            {
+              gh pr create --base main --head dev --title '${{ env.title }}' --body '${{ needs.changelog.outputs.changes }}' --label 'release'
+            } && {
+              gh pr comment dev --body '${{ env.comment }}'
+            } || {
+              gh pr edit dev --base main --title '${{ env.title }}' --body '${{ needs.changelog.outputs.changes }}' --add-label 'release'
+            }
