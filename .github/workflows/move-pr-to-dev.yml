@@ -7,7 +7,7 @@
           - main
 
     jobs:
-      version:
+      move-pr-to-dev:
         runs-on: ubuntu-latest
         permissions:
           pull-requests: write
