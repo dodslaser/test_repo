@@ -1,5 +1,7 @@
 # Create or update a release PR for merging dev -> main
 ---
+  name: Release PR
+
   on:
     push:
       branches: [dev]
@@ -40,7 +42,7 @@
         pull-requests: write
       steps:
         - uses: actions/checkout@v4
-        - name: Create or update release PR
+        - name: create-or-update
           env:
             GH_TOKEN: ${{ github.token }}
             title: Release ${{ needs.version.outputs.next }} 🚀

@@ -1,5 +1,7 @@
 # Create or update a release PR for merging dev -> main
 ---
+  name: Publish Release
+
   on:
     pull_request_target:
       types: [closed]
@@ -20,6 +22,22 @@
           branch: ${{ github.event.pull_request.base.ref }}
           noVersionBumpBehavior: 'patch'
 
+    bump-pyproject-version:
+      runs-on: ubuntu-latest
+      if: github.event.pull_request.merged == true
+      needs: [version]
+      steps:
+        - uses: actions/checkout@v4
+        - name: poetry-version
+          run: |
+            pipx install poetry
+            poetry version -- ${{ needs.version.outputs.next }}
+        - name: git-commit
+          run: |
+            git config --global user.email ""
+            git config --global user.name "github-actions[bot]"
+            git commit -am "chore: Bump version (${{ needs.version.outputs.current }} -> ${{ needs.version.outputs.next }})"
+
     publish-release:
       runs-on: ubuntu-latest
       if: github.event.pull_request.merged == true
@@ -28,7 +46,7 @@
         contents: write
       steps:
         - uses: actions/checkout@v4
-        - name: Publish Release
+        - name: publish-release
           env:
             GH_TOKEN: ${{ github.token }}
           run: |
