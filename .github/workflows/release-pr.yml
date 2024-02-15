@@ -9,7 +9,7 @@
     changes:
       runs-on: ubuntu-latest
       outputs:
-        changelog: ${{ steps.changelog.outputs.changelog }}
+        changelog: '${{ steps.changelog.outputs.changelog }}'
       steps:
       - uses: mikepenz/release-changelog-builder-action@v3
         id: changelog
@@ -50,7 +50,7 @@
               ${{ needs.changes.outputs.changelog }}
           run: |
             {
-              gh pr create --base main --head dev --title '${{ env.title }}' --body '${{ needs.changes.outputs.changelog }}' --label 'release'
+              gh pr create --base main --head dev --title '${{ env.title }}' --body '${{ env.body }}' --label 'release'
             } || {
               gh pr edit dev --base main --title '${{ env.title }}' --body '${{ env.body }}' --add-label 'release'
             }
