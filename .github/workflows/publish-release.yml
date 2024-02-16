@@ -9,6 +9,7 @@
 
   jobs:
     semver:
+      name: Calculate next version
       uses: ./.github/workflows/def_semver.yml
       with:
         branch: ${{ github.event.pull_request.base.ref }}
@@ -20,6 +21,7 @@
       permissions:
         contents: write
       steps:
+        - uses: actions/checkout@v4
         - name: publish-release
           env:
             GH_TOKEN: ${{ github.token }}
