@@ -1,0 +1,28 @@
+# Create or update a release PR for merging dev -> main
+---
+  name: PR Closed on Main
+
+  on:
+    pull_request_target:
+      types: [closed]
+      branches: [main]
+
+  jobs:
+    semver:
+      name: Calculate next version
+      if: github.event.pull_request.merged == 'true'
+      uses: ./.github/workflows/def_semver.yml
+      with:
+        head: ${{ github.event.pull_request.base.ref }}
+
+    publish-release:
+      name: Publish Release
+      if: github.event.pull_request.merged == 'true'
+      needs: semver
+      uses: ./.github/workflows/def_publish-release.yml
+      permissions:
+        contents: write
+      with:
+        version: ${{ needs.semver.outputs.next }}
+        changes: ${{ github.event.pull_request.body }}
+

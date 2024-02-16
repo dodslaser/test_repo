@@ -1,0 +1,17 @@
+# Move non-release PRs to dev branch
+---
+  name: PR Opened/Edit/Reopened on Main
+
+  on:
+    pull_request_target:
+      types: [opened, reopened, edited]
+      branches: [main]
+
+  jobs:
+    move-pr-to-dev:
+      uses: ./.github/workflows/def_move-pr.yml
+      permissions:
+        pull-requests: write
+      with:
+        pr_number: ${{ github.event.pull_request.number }}
+        base: dev

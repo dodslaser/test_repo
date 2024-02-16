@@ -1,0 +1,46 @@
+---
+  name: Release PR
+
+  on:
+    workflow_call:
+      inputs:
+        head:
+          description: 'The HEAD to use for the PR'
+          type: string
+          required: true
+        base:
+          description: 'The base to use for the PR'
+          type: string
+          required: true
+        version:
+          description: 'The version to bump to'
+          type: string
+          required: true
+        changes:
+          description: 'The changelog for the next release'
+          type: string
+          required: true
+
+  jobs:
+    release-pr:
+      runs-on: ubuntu-latest
+      permissions:
+        pull-requests: write
+      steps:
+        - uses: actions/checkout@v4
+        - name: create-or-update
+          env:
+            GH_TOKEN: ${{ github.token }}
+            title: Release ${{ inputs.version }} 🚀
+            comment: |
+              # 🤖 \*bleep bloop\*
+
+              This is a fully automated release PR. When merged I will ~~enslave all humans~~ create a new release with the listed changes.
+          run: |
+            {
+              gh pr create --base '${{ inputs.base }}' --head ${{ inputs.head }} --title '${{ env.title }}' --body '${{ inputs.changes }}' --label 'release'
+            } && {
+              gh pr comment ${{ inputs.head }} --body '${{ env.comment }}'
+            } || {
+              gh pr edit ${{ inputs.head }} --base main --title '${{ env.title }}' --body '${{ inputs.changes }}' --add-label 'release'
+            }

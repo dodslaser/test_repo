@@ -1,14 +1,14 @@
-# Get current/next semver version
 ---
   name: Semver Version
 
   on:
     workflow_call:
       inputs:
-        branch:
-          required: true
+        head:
+          description: The HEAD to get changes from
           type: string
-          description: 'The branch to compare against'
+          required: true
+
       outputs:
         current:
           value: ${{ jobs.semver.outputs.current }}
@@ -30,5 +30,5 @@
         id: semver
         with:
           token: ${{ github.token }}
-          branch: ${{ inputs.branch }}
+          branch: ${{ inputs.head }}
           noVersionBumpBehavior: 'patch'
