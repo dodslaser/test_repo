@@ -9,6 +9,7 @@
 
   jobs:
     move-pr-to-dev:
+      name: Move PR to dev branch
       runs-on: ubuntu-latest
       permissions:
         pull-requests: write

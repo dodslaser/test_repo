@@ -1,0 +1,34 @@
+# Get current/next semver version
+---
+  name: Semver Version
+
+  on:
+    workflow_call:
+      inputs:
+        branch:
+          required: true
+          type: string
+          description: 'The branch to compare against'
+      outputs:
+        current:
+          value: ${{ jobs.semver.outputs.current }}
+          description: 'The current semver version'
+        next:
+          value: ${{ jobs.semver.outputs.next }}
+          description: 'The next semver version'
+
+
+  jobs:
+    semver:
+      runs-on: ubuntu-latest
+      outputs:
+        current: ${{ steps.semver.outputs.current }}
+        next: ${{ steps.semver.outputs.next }}
+      steps:
+      - uses: actions/checkout@v4
+      - uses: ietf-tools/semver-action@v1
+        id: semver
+        with:
+          token: ${{ github.token }}
+          branch: ${{ inputs.branch }}
+          noVersionBumpBehavior: 'patch'
