@@ -1,47 +1,51 @@
 ---
-  name: "MegaLinter"
+name: "MegaLinter"
 
-  on:
-    workflow_call:
-      inputs:
-        event_name:
-          type: string
-          required: true
-          description: Original event name
+permissions:
+  contents: write
+  issues: write
+  pull-requests: write
+  statuses: write
+  security-events: write
 
-  concurrency:
-    group: ${{ github.ref }}-${{ github.workflow }}
-    cancel-in-progress: true
+on: # yamllint disable-line rule:truthy
+  workflow_call:
+    inputs:
+      event_name:
+        type: string
+        required: true
+        description: Original event name
+      head:
+        type: string
+        required: true
+        description: HEAD to lint
 
-  jobs:
-    megalinter:
-      name: MegaLinter
-      runs-on: ubuntu-latest
-      permissions:
-        contents: write
-        issues: write
-        pull-requests: write
-        statuses: write
-      steps:
+jobs:
+  megalinter:
+    name: MegaLinter
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      issues: write
+      pull-requests: write
+      statuses: write
+      security-events: write
+    steps:
       - uses: actions/checkout@v4
         with:
+          ref: ${{ inputs.head }}
           fetch-depth: 0
-      - uses: oxsecurity/megalinter/flavors/python@v7.8.0
+      - uses: megalinter/megalinter/flavors/python@v7.8.0
         id: mega-linter
         env:
           GITHUB_TOKEN: ${{ github.token }}
           MEGALINTER_CONFIG: .github/megalinter.yml
-          APPLY_FIXES_EVENT: 'none'
-          VALIDATE_ALL_CODEBASE: >-
-            ${{
-              inputs.event_name == 'push' &&
-              contains(fromJSON('["refs/heads/main", "refs/heads/master"]'), github.ref)
-            }}
+          APPLY_FIXES_EVENT: "none"
+          VALIDATE_ALL_CODEBASE: true
       - name: publish-summary
         if: always() && hashFiles('megalinter-reports/megalinter-report.md') != ''
         run: cat "megalinter-reports/megalinter-report.md" >> "${GITHUB_STEP_SUMMARY}"
       - uses: github/codeql-action/upload-sarif@v3
         if: always()
         with:
-          sarif_file: 'megalinter-reports/megalinter-report.sarif'
-
+          sarif_file: "megalinter-reports/megalinter-report.sarif"

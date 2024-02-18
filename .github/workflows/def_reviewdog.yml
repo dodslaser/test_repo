@@ -1,0 +1,132 @@
+---
+name: "Reviewdog"
+
+permissions:
+  contents: write
+  issues: write
+  pull-requests: write
+  statuses: write
+  security-events: write
+
+on: # yamllint disable-line rule:truthy
+  workflow_call:
+    inputs:
+      head:
+        type: string
+        required: true
+        description: HEAD to lint
+      pr-number:
+        type: string
+        required: true
+        description: PR number to lint
+
+env:
+  CI_PULL_REQUEST: ${{ github.event.inputs.pr-number }}
+  CI_REPO_OWNER: ${{ github.repository_owner }}
+  CI_REPO_NAME: ${{ github.event.repository.name }}
+  CI_BRANCH: ${{ github.event.inputs.head }}
+  REVIEWDOG_GITHUB_API_TOKEN: ${{ github.token }}
+
+jobs:
+  actionlint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.inputs.head }}
+      - uses: reviewdog/action-actionlint@v1
+        with:
+          reporter: github-check
+
+  markdownlint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.inputs.head }}
+      - uses: reviewdog/action-markdownlint@v0
+        with:
+          reporter: github-check
+          markdownlint_flags: --fix .
+      - uses: reviewdog/action-suggester@v1
+        with:
+          tool_name: markdownlint
+
+  black:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.inputs.head }}
+      - uses: reviewdog/action-black@v1
+        with:
+          reporter: github-check
+      - uses: psf/black@stable
+        with:
+          options: ""
+      - uses: reviewdog/action-suggester@v1
+        with:
+          tool_name: black
+          reviewdog_flags: -guess
+
+  isort:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.inputs.head }}
+      - name: install-poetry
+        run: pipx install poetry isort
+      - uses: actions/setup-python@v4
+        with:
+          python-version: "3.11"
+          cache: "poetry"
+      - name: isort
+        run: poetry run isort .
+      - uses: reviewdog/action-suggester@v1
+        with:
+          tool_name: isort
+          reviewdog_flags: -guess
+
+  mypy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: install-poetry
+        run: pipx install poetry mypy
+      - uses: actions/setup-python@v4
+        with:
+          python-version: "3.11"
+          cache: "poetry"
+      - uses: tsuyoshicho/action-mypy@v4
+        with:
+          execute_command: "poetry run mypy"
+          reporter: github-check
+
+  pylint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.inputs.head }}
+      - uses: dciborow/action-pylint@0.1.0
+        with:
+          reporter: github-check
+          glob_pattern: "**/*.py"
+  # checkov
+  # gitleaks
+  # grype
+  # secretlint
+  # trivy
+  # trivy-sbom
+  # trufflehog
+  # prettier
+  # v8r
+  yamllint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.inputs.head }}
+      - uses: reviewdog/action-yamllint@v1
+  # jscpd

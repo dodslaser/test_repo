@@ -1,19 +1,24 @@
 ---
-  on:
-    workflow_call:
-      inputs:
-        head:
-          required: true
-          type: string
+name: Run pytest
 
-  name: Run pytest
+permissions:
+  checks: write
+  pull-requests: write
 
-  jobs:
-    pytest:
-      runs-on: ubuntu-latest
-      permissions:
-        checks: write
-      steps:
+on: # yamllint disable-line rule:truthy
+  workflow_call:
+    inputs:
+      head:
+        required: true
+        type: string
+
+jobs:
+  pytest:
+    runs-on: ubuntu-latest
+    permissions:
+      checks: write
+      pull-requests: write
+    steps:
       - uses: actions/checkout@v4
         with:
           ref: ${{ inputs.head }}
@@ -21,8 +26,8 @@
         run: pipx install poetry
       - uses: actions/setup-python@v4
         with:
-          python-version: '3.11'
-          cache: 'poetry'
+          python-version: "3.11"
+          cache: "poetry"
       - name: poetry-install
         run: poetry install
       - name: pytest
