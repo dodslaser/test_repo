@@ -14,14 +14,14 @@ concurrency:
 jobs:
   semver:
     name: Calculate next version
-    if: github.event.pull_request.merged == 'true'
+    if: github.event.pull_request.merged == true
     uses: ./.github/workflows/def_semver.yml
     with:
       head: ${{ github.event.pull_request.base.ref }}
 
   publish-release:
     name: Publish Release
-    if: github.event.pull_request.merged == 'true'
+    if: github.event.pull_request.merged == true
     needs: semver
     uses: ./.github/workflows/def_publish-release.yml
     permissions:
