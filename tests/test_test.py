@@ -1,6 +1,5 @@
 """Test tests."""
 
-import yaml
 import functools
 
 def test_pass():
