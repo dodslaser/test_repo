@@ -20,7 +20,6 @@ on: # yamllint disable-line rule:truthy
         description: Pull request number
       reporter:
         type: string
-        required: true
         description: Reporter to use
         default: github-check
 
