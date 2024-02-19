@@ -18,6 +18,11 @@ on: # yamllint disable-line rule:truthy
         type: string
         required: true
         description: Pull request number
+      reporter:
+        type: string
+        required: true
+        description: Reporter to use
+        default: github-check
 
 env:
   CI_PULL_REQUEST: ${{ github.event.inputs.pr-number }}
@@ -35,7 +40,7 @@ jobs:
           ref: ${{ github.event.inputs.head }}
       - uses: reviewdog/action-actionlint@v1
         with:
-          reporter: github-pr-review
+          reporter: ${{ inputs.reporter }}
 
   markdownlint:
     runs-on: ubuntu-latest
@@ -45,7 +50,7 @@ jobs:
           ref: ${{ github.event.inputs.head }}
       - uses: reviewdog/action-markdownlint@v0
         with:
-          reporter: github-pr-review
+          reporter: ${{ inputs.reporter }}
 
   black:
     runs-on: ubuntu-latest
@@ -55,7 +60,7 @@ jobs:
           ref: ${{ github.event.inputs.head }}
       - uses: reviewdog/action-black@v1
         with:
-          reporter: github-pr-review
+          reporter: ${{ inputs.reporter }}
 
   mypy:
     runs-on: ubuntu-latest
@@ -70,7 +75,7 @@ jobs:
       - uses: tsuyoshicho/action-mypy@v4
         with:
           execute_command: 'poetry run mypy'
-          reporter: github-pr-review
+          reporter: ${{ inputs.reporter }}
 
   pylint:
     runs-on: ubuntu-latest
@@ -80,7 +85,7 @@ jobs:
           ref: ${{ github.event.inputs.head }}
       - uses: dciborow/action-pylint@0.1.0
         with:
-          reporter: github-pr-review
+          reporter: ${{ inputs.reporter }}
           glob_pattern: '**/*.py'
 
   gitleaks:
@@ -91,7 +96,7 @@ jobs:
           ref: ${{ github.event.inputs.head }}
       - uses: reviewdog/action-gitleaks@v1
         with:
-          reporter: github-pr-review
+          reporter: ${{ inputs.reporter }}
 
   trivy:
     runs-on: ubuntu-latest
@@ -103,7 +108,7 @@ jobs:
         with:
           trivy_command: filesystem
           trivy_target: '.'
-          reporter: github-pr-review
+          reporter: ${{ inputs.reporter }}
 
   yamllint:
     runs-on: ubuntu-latest
@@ -121,5 +126,5 @@ jobs:
           ref: ${{ github.event.inputs.head }}
       - uses: reviewdog/action-shellcheck@v1
         with:
-          reporter: github-pr-review
+          reporter: ${{ inputs.reporter }}
           reviewdog_flags: -guess

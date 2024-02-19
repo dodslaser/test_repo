@@ -37,3 +37,4 @@ jobs:
     with:
       head: ${{ github.event.pull_request.head.sha }}
       pr-number: ${{ github.event.pull_request.number }}
+      reporter: github-pr-review
