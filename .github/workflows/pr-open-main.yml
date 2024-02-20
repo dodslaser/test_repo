@@ -20,3 +20,29 @@ jobs:
     with:
       pr-number: ${{ github.event.pull_request.number }}
       base: dev
+
+  pytest:
+    name: Run tests
+    uses: ./.github/workflows/def_pytest.yml
+    needs: move-pr-to-dev
+    permissions:
+      checks: write
+      pull-requests: write
+    concurrency:
+      group: ${{ github.ref }}-${{ github.workflow }}-reviewdog-test
+    with:
+      head: ${{ github.event.pull_request.head.sha }}
+
+  reviewdog-lint:
+    name: Lint code
+    uses: ./.github/workflows/def_reviewdog-lint.yml
+    needs: move-pr-to-dev
+    permissions:
+      contents: write
+      issues: write
+      pull-requests: write
+      statuses: write
+    concurrency:
+      group: ${{ github.ref }}-${{ github.workflow }}-reviewdog-lint
+    with:
+      head: ${{ github.event.pull_request.head.sha }}

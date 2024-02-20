@@ -14,17 +14,6 @@ on: # yamllint disable-line rule:truthy
         type: string
         required: true
         description: HEAD to lint
-      pr-number:
-        type: string
-        required: true
-        description: Pull request number
-
-env:
-  CI_PULL_REQUEST: ${{ github.event.inputs.pr-number }}
-  CI_REPO_OWNER: ${{ github.repository_owner }}
-  CI_REPO_NAME: ${{ github.event.repository.name }}
-  CI_BRANCH: ${{ github.event.inputs.head }}
-  REVIEWDOG_GITHUB_API_TOKEN: ${{ github.token }}
 
 jobs:
   actionlint:
@@ -35,7 +24,7 @@ jobs:
           ref: ${{ github.event.inputs.head }}
       - uses: reviewdog/action-actionlint@v1
         with:
-          reporter: github-pr-review
+          reporter: github-check
 
   markdownlint:
     runs-on: ubuntu-latest
@@ -45,7 +34,7 @@ jobs:
           ref: ${{ github.event.inputs.head }}
       - uses: reviewdog/action-markdownlint@v0
         with:
-          reporter: github-pr-review
+          reporter: github-check
 
   black:
     runs-on: ubuntu-latest
@@ -55,7 +44,7 @@ jobs:
           ref: ${{ github.event.inputs.head }}
       - uses: reviewdog/action-black@v1
         with:
-          reporter: github-pr-review
+          reporter: github-check
 
   mypy:
     runs-on: ubuntu-latest
@@ -70,7 +59,7 @@ jobs:
       - uses: tsuyoshicho/action-mypy@v4
         with:
           execute_command: 'poetry run mypy'
-          reporter: github-pr-review
+          reporter: github-check
 
   pylint:
     runs-on: ubuntu-latest
@@ -80,7 +69,7 @@ jobs:
           ref: ${{ github.event.inputs.head }}
       - uses: dciborow/action-pylint@0.1.0
         with:
-          reporter: github-pr-review
+          reporter: github-check
           glob_pattern: '**/*.py'
 
   gitleaks:
@@ -91,7 +80,7 @@ jobs:
           ref: ${{ github.event.inputs.head }}
       - uses: reviewdog/action-gitleaks@v1
         with:
-          reporter: github-pr-review
+          reporter: github-check
 
   trivy:
     runs-on: ubuntu-latest
@@ -103,7 +92,7 @@ jobs:
         with:
           trivy_command: filesystem
           trivy_target: '.'
-          reporter: github-pr-review
+          reporter: github-check
 
   yamllint:
     runs-on: ubuntu-latest
@@ -121,5 +110,5 @@ jobs:
           ref: ${{ github.event.inputs.head }}
       - uses: reviewdog/action-shellcheck@v1
         with:
-          reporter: github-pr-review
+          reporter: github-check
           reviewdog_flags: -guess
