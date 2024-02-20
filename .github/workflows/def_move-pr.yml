@@ -1,7 +1,8 @@
 ---
 name: Move PR
 
-permissions: read-all
+permissions:
+  pull-requests: write
 
 on: # yamllint disable-line rule:truthy
   workflow_call:
