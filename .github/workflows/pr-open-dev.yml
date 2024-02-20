@@ -37,4 +37,3 @@ jobs:
       group: ${{ github.ref }}-${{ github.workflow }}-reviewdog-lint
     with:
       head: ${{ github.event.pull_request.head.sha }}
-
