@@ -9,6 +9,7 @@ on: # yamllint disable-line rule:truthy
     types: [opened, reopened, edited, synchronize]
     branches: [dev]
 
+
 concurrency:
   group: ${{ github.event.pull_request.number }}-${{ github.workflow }}
 
@@ -36,5 +37,4 @@ jobs:
       group: ${{ github.ref }}-${{ github.workflow }}-reviewdog-lint
     with:
       head: ${{ github.event.pull_request.head.sha }}
-      pr-number: ${{ github.event.pull_request.number }}
-      reporter: github-pr-review
+
