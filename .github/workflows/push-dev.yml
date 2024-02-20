@@ -72,4 +72,3 @@ jobs:
       group: ${{ github.ref }}-${{ github.workflow }}-reviewdog-lint
     with:
       head: dev
-      pr-number: ${{ needs.release-pr.outputs.pr-number }}
