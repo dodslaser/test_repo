@@ -24,6 +24,7 @@ jobs:
   pytest:
     name: Run tests
     uses: ./.github/workflows/def_pytest.yml
+    needs: move-pr-to-dev
     permissions:
       checks: write
       pull-requests: write
@@ -35,6 +36,7 @@ jobs:
   reviewdog-lint:
     name: Lint code
     uses: ./.github/workflows/def_reviewdog-lint.yml
+    needs: move-pr-to-dev
     permissions:
       contents: write
       issues: write
