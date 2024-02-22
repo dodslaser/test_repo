@@ -1,56 +1,32 @@
 on:
-  push:
-    branches:
-      - dev
+  workflow_call:
+    inputs:
+      vers
 
 jobs:
-  read-modules-json:
+  read-file:
     runs-on: ubuntu-latest
     outputs:
       json: ${{ steps.read-file.outputs.json }}
     steps:
       - uses: actions/checkout@v4
       - id: read-file
-        run: echo json=$(cat modules.json) >> "$GITHUB_OUTPUT"
+        run: echo json=$(cat test.json) >> "$GITHUB_OUTPUT"
 
-  get-cellophane-tags:
-    runs-on: ubuntu-latest
-    outputs:
-      tags: ${{ steps.get-tags.outputs.tags }}
-    env:
-      GH_TOKEN: ${{ github.token }}
-      cellophane_repo: ClinicalGenomicsGBG/cellophane
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          fetch-depth: 1
-      - name: get-tags
-        id: get-tags
-        run: |
-          echo tags=$(
-            gh release list \
-              --repo '${{ env.cellophane_repo }}' \
-              --json tagName \
-              --exclude-drafts \
-              --exclude-pre-releases \
-              --jq '[.[].tagName]'
-            ) >> "$GITHUB_OUTPUT"
-
-  test-compatability:
-    name: ${{ matrix.json.name }}-0.42.0_cellophane-${{ matrix.tag }}
-    needs: [read-modules-json, get-cellophane-tags]
+  test-matrix:
+    needs: read-file
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        tag: ${{ fromJson(needs.get-cellophane-tags.outputs.tags) }}
-        json: ${{ fromJson(needs.read-modules-json.outputs.json) }}
+        version: ['0.0.1', '0.0.2']
+        json: ${{ fromJson(needs.read-file.outputs.json) }}
     env:
-      path: '${{ matrix.json.name }}-${{ matrix.tag }}-1.33.7.json'
+      path: '${{ matrix.json.name }}-${{ matrix.version }}-1.33.7.json'
       jq_script: >
         .versions |=.+ [
           {
             tag: "0.42.0",
-            "cellophane": ["${{ matrix.tag }}"]
+            "cellophane": ["${{ matrix.version }}"]
           }
         ]
 
@@ -62,7 +38,7 @@ jobs:
           path: ${{ env.path }}
 
   output:
-    needs: test-compatability
+    needs: test-matrix
     runs-on: ubuntu-latest
     env:
       jq_script: >
@@ -86,3 +62,9 @@ jobs:
           merge-multiple: true
       - run: cat versions/*.json
       - run: jq -s '${{ env.jq_script }}' versions/*.json
+
+# jq -s '. | group_by(.name) | map(.[0].versions[0].[] = [.[].versions[].[] | add] | .[0])'
+# jq -s '. | group_by(.name) | map(group_by(.versions.[].tag))'
+
+# jq -s 'group_by([.versions[].tag, .name]) | map(.[0].versions[0].cellophane = [ .[].versions[].cellophane | add] | .[0])'
+# group_by(.name) | map(.[0].versions = ([.[].versions] | (add | unique | group_by(.tag) | map(first.cellophane = ([.[].cellophane] | add | unique) | first) )) | first)

@@ -1,0 +1,16 @@
+[
+    {
+        "name": "module_a",
+        "path": "modules/module_a/",
+        "versions": [
+            {"tag": "1.0.0", "cellophane": ["0.0.1", "0.0.2"]}
+        ]
+    },
+    {
+        "name": "module_b",
+        "path": "modules/module_b/",
+        "versions": [
+            {"tag": "1.0.0", "cellophane": ["0.0.1", "0.0.2"]}
+        ]
+    }
+]
