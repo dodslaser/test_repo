@@ -1,0 +1,71 @@
+on:
+  workflow_call:
+    inputs:
+      module:
+        description: 'Module name'
+        type: string
+        required: true
+      path:
+        description: 'Path to the module'
+        type: string
+        required: true
+      version:
+        description: 'Skip calculating the next version and use this instead'
+        type: string
+        default: 'next'
+        required: false
+    outputs:
+      next:
+        description: 'The semver version'
+        value: ${{ jobs.modules-semver.outputs.next }}
+      current:
+        description: 'The current semver version'
+        value: ${{ jobs.modules-semver.outputs.current }}
+
+jobs:
+  modules-semver:
+    runs-on: ubuntu-latest
+    outputs:
+      next: ${{ steps.set-output.outputs.next }}
+      current: ${{ steps.set-output.outputs.current }}
+    steps:
+      - name: preset-version
+        if: ${{ inputs.version != 'next' }}
+        run: echo NEXT=${{ inputs.version }} >> "$GITHUB_ENV"
+
+      - uses: actions/checkout@v4
+        if: ${{ inputs.version == 'next' }}
+        with:
+          fetch-depth: 0
+      - name: latest-tag
+        if: ${{ inputs.version == 'next' }}
+        id: latest-tag
+        run: echo tag=$(git describe --tags --abbrev=0 --match '${{ inputs.module }}/*') >> "$GITHUB_OUTPUT"
+      - name: get-commits
+        if: ${{ inputs.version == 'next' }}
+        id: get-commits
+        run: |
+          echo commits=$(
+            git log \
+              --format="%s" \
+              ${{ steps.latest-tag.outputs.tag }}.. \
+              -- ${{ inputs.path }}
+          ) | tee -a "$GITHUB_OUTPUT"
+      - uses: dodslaser/semver-action@main
+        if: ${{ inputs.version == 'next' }}
+        id: semver
+        with:
+          token: ${{ github.token }}
+          branch: ${{ steps.latest-tag.outputs.tag }}
+          prefix: '${{ inputs.module }}/'
+          additionalCommits: ${{ steps.get-commits.outputs.commits }}
+          noVersionBumpBehavior: patch
+      - name: semver-output
+        if: ${{ inputs.version == 'next' }}
+        run: |
+          echo NEXT=${{ steps.semver.outputs.next }} >> "$GITHUB_ENV"
+
+      - name: set-output
+        id: set-output
+        run: |
+          echo next=${{ env.NEXT }} >> "$GITHUB_OUTPUT"

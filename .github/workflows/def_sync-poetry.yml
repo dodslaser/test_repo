@@ -1,0 +1,29 @@
+on:
+  workflow_call:
+    inputs:
+      path:
+        description: 'The working directory (must contain pyproject.toml)'
+        type: string
+        default: '.'
+      version:
+        description: 'The version to pass to `poetry version`'
+        type: string
+
+jobs:
+  sync-poetry:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: install-poetry
+        run: pipx install poetry
+      - name: poetry-version
+        run: poetry version -- ${{ inputs.version }}
+      - name: poetry-lock
+        run: poetry lock
+      - name: poetry-export
+        run: |
+          poetry export \
+            --format=requirements.txt \
+            --output requirements.txt \
+            --without-hashes \
+            --without-urls

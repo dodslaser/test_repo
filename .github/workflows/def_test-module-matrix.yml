@@ -1,0 +1,68 @@
+on:
+  workflow_call:
+    inputs:
+      test-all-versions:
+        description: "Test all versions of a module"
+        type: "boolean"
+        required: false
+        default: false
+
+jobs:
+  get-module-versions:
+    runs-on: ubuntu-latest
+    outputs:
+      versions: ${{ steps.set-versions.outputs.versions }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: haya14busa/action-cond@v1
+        id: versions
+        with:
+          cond: ${{ github.event.inputs.test-all-versions == 'true' }}
+          if_true: 'reduce .[] as $m ([]; . += ($m.versions | keys | map({name: $m.name, version: ., "path": $m.path})))'
+          if_false: 'reduce .[] as $m ([]; . += [{name: $m.name, version: "next", "path": $m.path}])'
+      - id: set-versions
+        run:
+          echo versions=$(jq '${{ steps.versions.outputs.value }}' modules.json) | tee -a "$GITHUB_OUTPUT"
+
+  get-cellophane-tags:
+    uses: ./.github/workflows/def_get-tags.yml
+    with:
+      repo: "ClinicalGenomicsGBG/cellophane"
+
+  test-compatability:
+    needs: [get-cellophane-tags, get-module-versions]
+    strategy:
+      matrix:
+        tag: ${{ fromJson(needs.get-cellophane-tags.outputs.tags) }}
+        name: ${{ fromJson(needs.get-module-versions.outputs.versions).*.name }}
+        include: ${{ fromJson(needs.get-module-versions.outputs.versions) }}
+    name: ${{ matrix.name }}-${{ matrix.version }}_cellophane-${{ matrix.tag }}
+    uses: "./.github/workflows/def_test-module.yml"
+    with:
+      module: ${{ matrix.name }}
+      cellophane_tag: ${{ matrix.tag }}
+      path: ${{ matrix.path }}
+      version: ${{ matrix.version }}
+
+  merge-json:
+    needs: test-compatability
+    runs-on: ubuntu-latest
+    env:
+      jq_script: |
+        reduce .[] as $x (
+          reduce $modules[] as $y ({}; .[$y.name] = $y);
+          .[$x.name].versions[$x.version].cellophane += [$x.cellophane] |
+          .[$x.name].versions[$x.version].tag = $x.tag
+        ) | flatten
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          path: versions
+          merge-multiple: true
+      - name: merge-json
+        id: merge-json
+        run: |
+          jq '${{ env.jq_script }}' \
+            --argjson modules "$(cat modules.json)" \
+            --slurp versions/*.json

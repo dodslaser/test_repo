@@ -1,0 +1,83 @@
+name: Test Cellophane Compatibility
+on:
+  workflow_call:
+    inputs:
+      module:
+        description: 'Name of the module'
+        type: string
+        required: true
+      version:
+        description: "Module version to test compatibility with"
+        type: string
+        required: false
+        default: "next"
+      path:
+        description: 'Path to the module'
+        type: string
+        required: true
+      cellophane_tag:
+        description: 'Cellophane tag to test compatibility with'
+        type: string
+        required: true
+
+
+jobs:
+  cache:
+    runs-on: ubuntu-latest
+    outputs:
+      cache-hit: '${{ steps.cache.outputs.cache-hit }}'
+      cache-primary-key: '${{ steps.cache.outputs.cache-primary-key }}'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/cache/restore@v4
+        id: cache
+        env:
+          key: '${{ inputs.module}}-${{ hashFiles(inputs.path) }}-${{ inputs.cellophane_tag }}'
+        with:
+          key: '${{ env.key }}'
+          path: '${{ env.key }}.json'
+      - uses: actions/upload-artifact@v4
+        if: ${{ steps.cache.outputs.cache-hit == 'true' }}
+        with:
+          name: '${{ steps.cache.outputs.cache-primary-key }}'
+          path: '${{ steps.cache.outputs.cache-primary-key }}.json'
+
+  semver:
+    needs: cache
+    if: ${{ needs.cache.outputs.cache-hit != 'true' }}
+    uses: "./.github/workflows/def_module-semver.yml"
+    with:
+      module: ${{ inputs.module }}
+      path: ${{ inputs.path }}
+      version: ${{ inputs.version }}
+
+  generate-json:
+    needs: [semver, cache]
+    runs-on: ubuntu-latest
+    steps:
+      - name: generate-json
+        env:
+          jq_script: |
+            {
+              name: $name,
+              tag: ($tag),
+              version: $tag | ltrimstr($name + "/"),
+              cellophane: $cellophane
+            }
+        run: |
+          jq --null-input \
+            --arg name "${{ inputs.module }}" \
+            --arg tag "${{ needs.semver.outputs.next }}" \
+            --arg cellophane "${{ inputs.cellophane_tag }}" \
+            '${{ env.jq_script }}' \
+            | tee '${{ needs.cache.outputs.cache-primary-key }}.json'
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: '${{ needs.cache.outputs.cache-primary-key }}'
+          path: '${{ needs.cache.outputs.cache-primary-key }}.json'
+
+      - uses: actions/cache/save@v4
+        with:
+          key: '${{ needs.cache.outputs.cache-primary-key }}'
+          path: '${{ needs.cache.outputs.cache-primary-key }}.json'
