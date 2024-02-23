@@ -53,9 +53,41 @@ jobs:
             "cellophane": ["${{ matrix.tag }}"]
           }
         ]
-
     steps:
-      - run: jq '${{ env.jq_script }}' <<< '${{ toJson(matrix.json) }}' > "${{ env.path }}"
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: latest-tag
+        id: latest-tag
+        run: echo tag=$(git describe --tags --abbrev=0 --match '${{ matrix.json.name }}/*') >> "$GITHUB_OUTPUT"
+      - name: get-commits
+        id: get-commits
+        run: |
+          echo commits=$(
+            git log \
+              --format="%s" \
+              ${{ steps.latest-tag.outputs.tag }}.. \
+              -- ${{ matrix.json.path }}
+          ) >> "$GITHUB_OUTPUT"
+
+      - uses: ietf-tools/semver-action@v1
+        id: semver
+        with:
+          token: ${{ github.token }}
+          prefix: '${{ matrix.json.name }}/'
+          additionalCommits: ${{ steps.get-commits.outputs.commits }}
+          noVersionBumpBehavior: patch
+          branch: ${{ steps.latest-tag.outputs.tag }}
+
+      - run: |
+          jq '
+            .versions |=.+ [
+              {
+                tag: "${{ steps.semver.outputs.next }}",
+                "cellophane": ["${{ matrix.tag }}"]
+              }
+            ]
+          ' <<< '${{ toJson(matrix.json) }}' > "${{ env.path }}"
       - uses: actions/upload-artifact@v4
         with:
           name: ${{ env.path }}
@@ -84,5 +116,4 @@ jobs:
         with:
           path: versions
           merge-multiple: true
-      - run: cat versions/*.json
       - run: jq -s '${{ env.jq_script }}' versions/*.json
